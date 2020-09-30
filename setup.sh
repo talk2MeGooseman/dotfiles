@@ -18,12 +18,17 @@ sudo apt-get --ignore-missing install build-essential git-core curl openssl libs
 echo "Installs ImageMagick for image processing"
 sudo apt-get install imagemagick --fix-missing -y
 
-echo "Installs RVM (Ruby Version Manager) for handling Ruby installation"
-# Retrieve the GPG key.
-curl -sSL https://rvm.io/mpapis.asc | gpg --import -
-curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
-curl -sSL https://get.rvm.io | bash -s stable
-source ~/.rvm/scripts/rvm
+if ! command -v rvm &> /dev/null
+then
+  echo "Installs RVM (Ruby Version Manager) for handling Ruby installation"
+  # Retrieve the GPG key.
+  curl -sSL https://rvm.io/mpapis.asc | gpg --import -
+  curl -sSL https://rvm.io/pkuczynski.asc | gpg --import -
+  curl -sSL https://get.rvm.io | bash -s stable
+  source ~/.rvm/scripts/rvm
+else
+  echo "Skip rvm install"
+fi
 
 echo "gem: --no-ri --no-rdoc" > ~/.gemrc
 
@@ -50,17 +55,28 @@ mix archive.install hex phx_new --force
 
 echo "Add Tak2MeGooseman's tmux conf"
 wget https://raw.githubusercontent.com/talk2MeGooseman/tools-and-workflow-stuff/master/.tmux.conf
-mv .tmux.conf ~/
 
-echo "Install TPM, Tmux Plugin Manager"
-git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
-
-echo "Add Talk2MeGooseman's .vimrc"
-wget https://raw.githubusercontent.com/talk2MeGooseman/tools-and-workflow-stuff/master/.vimrc
-mv .vimrc ~/
+if [ -d $HOME/.tmux/plugins/tpm/ ]; then
+  echo "Skipping TPM install"
+else
+  echo "Install TPM, Tmux Plugin Manager"
+  git clone https://github.com/tmux-plugins/tpm $HOME/.tmux/plugins/tpm
+fi
 
 echo "Install docker-compose since Codespaces has Docker but not compose"
 sudo curl -L "https://github.com/docker/compose/releases/download/1.25.5/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
 sudo chmod +x /usr/local/bin/docker-compose
+
+echo "Installing neovim"
+sudo apt install neovim -y
+
+if [ -f $HOME/.config/nvim/init.vim ]; then
+    echo "init.vim exists already, skipping init.vim step to avoid overwritting it."
+else
+    echo "Add Talk2MeGooseman's .vimrc"
+    wget https://raw.githubusercontent.com/talk2MeGooseman/tools-and-workflow-stuff/master/.vimrc
+    mkdir --parents $HOME/.config/nvim/;
+    mv .vimrc $HOME/.config/nvim/init.vim
+fi
 
 exec /bin/bash --login
